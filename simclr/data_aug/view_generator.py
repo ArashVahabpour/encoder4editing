@@ -1,5 +1,5 @@
 import numpy as np
-
+from torchvision import transforms 
 np.random.seed(0)
 
 
@@ -8,8 +8,9 @@ class ContrastiveLearningViewGenerator(object):
 
     def __init__(self, base_transform, n_views=2):
         self.base_transform = base_transform
+        self.identity_transform = transforms.ToTensor()
         self.n_views = n_views
 
     def __call__(self, x):
         # the first transformation applies no augmentation (used for encoder4editing pipeline)
-        return [x] + [self.base_transform(x) for i in range(self.n_views-1)]
+        return [self.identity_transform(x)] + [self.base_transform(x) for i in range(self.n_views-1)]
