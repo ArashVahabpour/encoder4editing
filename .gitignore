@@ -127,3 +127,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# SimCLR version
+celeba/*
+*.pt
+experiment/*
+ffhq-dataset/*
+images1024/*
+lsun/*
+pretrained_models/*
+stylegan2-pytorch/*
+
