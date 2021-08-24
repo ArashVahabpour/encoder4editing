@@ -6,6 +6,7 @@ from torch import nn
 from models.encoders import psp_encoders
 from models.stylegan2.model import Generator
 from configs.paths_config import model_paths
+import tensorflow as tf
 
 
 def get_keys(d, name):
@@ -50,7 +51,11 @@ class pSp(nn.Module):
             encoder_ckpt = torch.load(model_paths['ir_se50'])
             self.encoder.load_state_dict(encoder_ckpt, strict=False)
             print('Loading decoder weights from pretrained!')
-            ckpt = torch.load(self.opts.stylegan_weights)
+            print('weights ', self.opts.stylegan_weights)
+            with tf.Session().as_default() as sess:
+                ckpt = torch.load(self.opts.stylegan_weights)
+            print('stylegan weights', self.opts.stylegan_weights)
+
             self.decoder.load_state_dict(ckpt['g_ema'], strict=False)
             self.__load_latent_avg(ckpt, repeat=self.encoder.style_count)
 

@@ -1,7 +1,7 @@
 dataset_paths = {
 	#  Face Datasets (In the paper: FFHQ - train, CelebAHQ - test)
-	'ffhq': '',
-	'celeba_test': '',
+	'ffhq': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/images1024',
+	'celeba_test': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/celeba',
 
 	#  Cars Dataset (In the paper: Stanford cars)
 	'cars_train': '',

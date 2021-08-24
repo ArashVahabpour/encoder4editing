@@ -31,8 +31,8 @@ class TrainOptions:
         self.parser.add_argument('--id_lambda', default=0.1, type=float, help='ID loss multiplier factor')
         self.parser.add_argument('--l2_lambda', default=1.0, type=float, help='L2 loss multiplier factor')
 
-        self.parser.add_argument('--stylegan_weights', default=model_paths['stylegan_ffhq'], type=str,
-                                 help='Path to StyleGAN model weights')
+        self.parser.add_argument('--stylegan_weights', default=model_paths['stylegan_ffhq'],#['moco'], #'stylegan_ffhq'], 
+                                 type=str, help='Path to StyleGAN model weights')
         self.parser.add_argument('--stylegan_size', default=1024, type=int,
                                  help='size of pretrained StyleGAN Generator')
         self.parser.add_argument('--checkpoint_path', default=None, type=str, help='Path to pSp model checkpoint')

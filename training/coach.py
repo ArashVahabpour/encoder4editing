@@ -266,7 +266,7 @@ class Coach:
 
         source_transform = ContrastiveLearningViewGenerator(self.get_simclr_pipeline_transform(size=self.opts.stylegan_size, s=1),
                                                             n_views=2)
-
+        print('dataset ', dataset_args)
         train_dataset = ImagesDataset(source_root=dataset_args['train_source_root'],
                                       target_root=dataset_args['train_target_root'],
                                       source_transform=source_transform,#transforms_dict['transform_source'],
@@ -437,7 +437,7 @@ class Coach:
 
     def train_discriminator(self, batch):
         loss_dict = {}
-        x, _ = batch
+        (x, _), _ = batch
         x = x.to(self.device).float()
         self.requires_grad(self.discriminator, True)
 
