@@ -59,18 +59,22 @@ class pSp(nn.Module):
             self.decoder.load_state_dict(ckpt['g_ema'], strict=False)
             self.__load_latent_avg(ckpt, repeat=self.encoder.style_count)
 
+
     def forward(self, x, resize=True, latent_mask=None, input_code=False, randomize_noise=True,
                 inject_latent=None, return_latents=False, alpha=None):
+        print('x size ', x.size())
         if input_code:
             codes = x
         else:
             codes = self.encoder(x)
+            print('codes before size: ', codes.size())
             # normalize with respect to the center of an average face
             if self.opts.start_from_latent_avg:
                 if codes.ndim == 2:
                     codes = codes + self.latent_avg.repeat(codes.shape[0], 1, 1)[:, 0, :]
                 else:
                     codes = codes + self.latent_avg.repeat(codes.shape[0], 1, 1)
+            print('codes after size: ', codes.size())
 
         if latent_mask is not None:
             for i in latent_mask:

@@ -13,4 +13,5 @@ class ContrastiveLearningViewGenerator(object):
 
     def __call__(self, x):
         # the first transformation applies no augmentation (used for encoder4editing pipeline)
+        print('x ', x.size, self.identity_transform(x).size(), self.base_transform(x).size())
         return [self.identity_transform(x)] + [self.base_transform(x) for i in range(self.n_views-1)]

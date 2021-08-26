@@ -32,6 +32,7 @@ class IDLoss(nn.Module):
         sim_improvement = 0
         id_logs = []
         count = 0
+        print('x y yhat feats size ', x.size(), y.size(), y_hat.size(), y_feats.size(), y_hat_feats.size())
         for i in range(n_samples):
             diff_target = y_hat_feats[i].dot(y_feats[i])
             diff_input = y_hat_feats[i].dot(x_feats[i])
