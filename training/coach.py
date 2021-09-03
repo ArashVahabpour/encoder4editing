@@ -96,12 +96,14 @@ class Coach:
     def get_simclr_pipeline_transform(size, s=1):
         """Return a set of data augmentation transformations as described in the SimCLR paper."""
         color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
-        data_transforms = transforms.Compose([transforms.RandomResizedCrop(size=size),
-                                              transforms.RandomHorizontalFlip(),
-                                              transforms.RandomApply([color_jitter], p=0.8),
-                                              transforms.RandomGrayscale(p=0.2),
-                                              GaussianBlur(kernel_size=int(0.1 * size)),
-                                              transforms.ToTensor()])
+        data_transforms = transforms.Compose([#transforms.RandomResizedCrop(size=size),
+                                              transforms.Resize((size, size)),
+                                              #transforms.RandomHorizontalFlip(),
+                                              #transforms.RandomApply([color_jitter], p=0.8),
+                                              #transforms.RandomGrayscale(p=0.2),
+                                              #GaussianBlur(kernel_size=int(0.1 * size)),
+                                              transforms.ToTensor(),
+                                              transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
         return data_transforms
 
     def info_nce_loss(self, features):
@@ -110,9 +112,10 @@ class Coach:
         labels = (labels.unsqueeze(0) == labels.unsqueeze(1)).float()
         labels = labels.to(self.device)
 
+        #print('feature size before : ', features.size())
         features = F.normalize(features, dim=1)
-
-        print('feature size: ', features.size())
+        #print('feature size: ', features.size())
+        #print('labels size: ', labels.size())
         similarity_matrix = torch.matmul(features, features.T)
         # assert similarity_matrix.shape == (
         #     self.args.n_views * self.args.batch_size, self.args.n_views * self.args.batch_size)
@@ -162,12 +165,13 @@ class Coach:
                     loss_dict = self.train_discriminator(batch)
 
                 (x, x_aug), y = batch
-                print('size x x_aug batch ', x.size(), x_aug.size())
-                x_all = torch.cat((x, x_aug), dim=0)
-                x, y, y_hat, latent_all = self.forward_orig((x_all, y))
-                loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent_all)
-                #x, x_aug, y, y_hat, latent, latent_aug = self.forward(batch)
-                #loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent, latent_aug)
+                #print('size x x_aug batch ', x.size(), x_aug.size())
+                #x_all = torch.cat((x, x_aug), dim=0)
+                #x, y, y_hat, latent_all = self.forward_orig((x_all, y))
+                #loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent_all)
+                x, x_aug, y, y_hat, latent, latent_aug = self.forward(batch)
+                #print('size latent latent_aug batch ', latent.size(), latent_aug.size())
+                loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent, latent_aug)
 
                 loss_dict = {**loss_dict, **encoder_loss_dict}
                 self.optimizer.zero_grad()
@@ -216,15 +220,22 @@ class Coach:
         agg_loss_dict = []
         for batch_idx, batch in enumerate(self.test_dataloader):
             cur_loss_dict = {}
+            #print('test_batch 0', type(batch[0]), len(batch[0]))
             if self.is_training_discriminator():
                 cur_loss_dict = self.validate_discriminator(batch)
             with torch.no_grad():
+                #print('batch ', batch)
+                x, x_aug, y, y_hat, latent, latent_aug = self.forward(batch)
+                #print('VAL x x_aug', x.size(), x_aug.size())
+                #x, y, y_hat, latent = self.forward_orig(batch)
+                #loss, cur_encoder_loss_dict, id_logs = self.calc_loss_orig(x, y, y_hat, latent)
+                loss, cur_encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent, latent_aug)
+                #(x, x_aug), y = batch
+                #x_all = torch.cat((x, x_aug), dim=0)
+                #x, y, y_hat, latent_all = self.forward_orig((x_all, y))
+                #loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent_all)
                 #x, x_aug, y, y_hat, latent, latent_aug = self.forward(batch)
-                #loss, cur_encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent, latent_aug)
-                (x, x_aug), y = batch
-                x_all = torch.cat((x, x_aug), dim=0)
-                x, y, y_hat, latent_all = self.forward_orig((x_all, y))
-                loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent_all)
+                #loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent, latent_aug)
                 cur_loss_dict = {**cur_loss_dict, **cur_encoder_loss_dict}
             agg_loss_dict.append(cur_loss_dict)
 
@@ -282,7 +293,7 @@ class Coach:
         print('dataset ', dataset_args)
         train_dataset = ImagesDataset(source_root=dataset_args['train_source_root'],
                                       target_root=dataset_args['train_target_root'],
-                                      source_transform=source_transform,#transforms_dict['transform_source'],
+                                      source_transform=source_transform, #transforms_dict['transform_source'],
                                       target_transform=transforms_dict['transform_gt_train'],
                                       opts=self.opts)
         test_dataset = ImagesDataset(source_root=dataset_args['test_source_root'],
@@ -294,11 +305,13 @@ class Coach:
         print("Number of test samples: {}".format(len(test_dataset)))
         return train_dataset, test_dataset
 
-    #def calc_loss(self, x, y, y_hat, latent, latent_aug):
-    def calc_loss(self, x, y, y_hat, latent_all):
-        N = latent_all.size(0)
-        print('N ', N)
-        latent = latent_all[:(N//2)]
+
+    def calc_loss(self, x, y, y_hat, latent, latent_aug):
+    #def calc_loss(self, x, y, y_hat, latent_all):
+        #print('Latent Latent_aug size: ', latent.size(), latent_aug.size())
+        #N = latent_all.size(0)
+        #print('N ', N)
+        #latent = latent_all[:(N//2)]
         loss_dict = {}
         loss = 0.0
         id_logs = None
@@ -330,7 +343,7 @@ class Coach:
             loss += self.opts.delta_norm_lambda * total_delta_loss
 
         if self.opts.id_lambda > 0:  # Similarity loss
-            print('y yhat size ', y.size(), y_hat.size())
+            #print('y yhat size ', y.size(), y_hat.size())
             loss_id, sim_improvement, id_logs = self.id_loss(y_hat, y, x)
             loss_dict['loss_id'] = float(loss_id)
             loss_dict['id_improve'] = float(sim_improvement)
@@ -346,8 +359,11 @@ class Coach:
         if self.opts.simclr_lambda > 0:
             #print('size ', latent.size(), latent_aug.size())
             #latent_simclr = torch.cat((latent.unsqueeze(0), latent_aug.unsqueeze(0)), dim=0)
-            #logits, labels = self.info_nce_loss(latent_simclr)
-            logits, labels = self.info_nce_loss(latent_all)
+            #print('latent latent aug size: ', latent.size(), latent_aug.size())
+            latent_simclr = torch.cat((latent.reshape(latent.size(0), -1), latent_aug.reshape(latent.size(0), -1)), dim=0)
+            #print('latent simclr size ', latent_simclr.size())
+            logits, labels = self.info_nce_loss(latent_simclr)
+            #logits, labels = self.info_nce_loss(latent_all)
             loss_simclr = self.simclr_criterion(logits, labels)
             loss_dict['loss_simclr'] = float(loss_simclr)
             loss += loss_simclr * self.opts.simclr_lambda
@@ -355,10 +371,73 @@ class Coach:
         loss_dict['loss'] = float(loss)
         return loss, loss_dict, id_logs
 
+
+    def calc_loss_orig(self, x, y, y_hat, latent):
+        loss_dict = {}
+        loss = 0.0
+        id_logs = None
+        if self.is_training_discriminator():  # Adversarial loss
+            loss_disc = 0.
+            dims_to_discriminate = self.get_dims_to_discriminate() if self.is_progressive_training() else \
+                list(range(self.net.decoder.n_latent))
+
+            for i in dims_to_discriminate:
+                w = latent[:, i, :]
+                fake_pred = self.discriminator(w)
+                loss_disc += F.softplus(-fake_pred).mean()
+            loss_disc /= len(dims_to_discriminate)
+            loss_dict['encoder_discriminator_loss'] = float(loss_disc)
+            loss += self.opts.w_discriminator_lambda * loss_disc
+
+        if self.opts.progressive_steps and self.net.encoder.progressive_stage.value != 18:  # delta regularization loss
+            total_delta_loss = 0
+            deltas_latent_dims = self.net.encoder.get_deltas_starting_dimensions()
+
+            first_w = latent[:, 0, :]
+            for i in range(1, self.net.encoder.progressive_stage.value + 1):
+                curr_dim = deltas_latent_dims[i]
+                delta = latent[:, curr_dim, :] - first_w
+                delta_loss = torch.norm(delta, self.opts.delta_norm, dim=1).mean()
+                loss_dict[f"delta{i}_loss"] = float(delta_loss)
+                total_delta_loss += delta_loss
+            loss_dict['total_delta_loss'] = float(total_delta_loss)
+            loss += self.opts.delta_norm_lambda * total_delta_loss
+
+        if self.opts.id_lambda > 0:  # Similarity loss
+            #print('y yhat size ', y.size(), y_hat.size())
+            loss_id, sim_improvement, id_logs = self.id_loss(y_hat, y, x)
+            loss_dict['loss_id'] = float(loss_id)
+            loss_dict['id_improve'] = float(sim_improvement)
+            loss += loss_id * self.opts.id_lambda
+        if self.opts.l2_lambda > 0:
+            loss_l2 = F.mse_loss(y_hat, y)
+            loss_dict['loss_l2'] = float(loss_l2)
+            loss += loss_l2 * self.opts.l2_lambda
+        if self.opts.lpips_lambda > 0:
+            loss_lpips = self.lpips_loss(y_hat, y)
+            loss_dict['loss_lpips'] = float(loss_lpips)
+            loss += loss_lpips * self.opts.lpips_lambda
+        #if self.opts.simclr_lambda > 0:
+            #print('size ', latent.size(), latent_aug.size())
+            #latent_simclr = torch.cat((latent.unsqueeze(0), latent_aug.unsqueeze(0)), dim=0)
+            #print('latent latent aug size: ', latent.size(), latent_aug.size())
+            #latent_simclr = torch.cat((latent.reshape(latent.size(0), -1), latent_aug.reshape(latent.size(0), -1)), dim=0)
+            #print('latent simclr size ', latent_simclr.size())
+            #logits, labels = self.info_nce_loss(latent)
+            #logits, labels = self.info_nce_loss(latent_all)
+            #loss_simclr = self.simclr_criterion(logits, labels)
+            #loss_dict['loss_simclr'] = float(loss_simclr)
+            #loss += loss_simclr * self.opts.simclr_lambda
+
+        loss_dict['loss'] = float(loss)
+        return loss, loss_dict, id_logs
+
+
     def forward(self, batch):
         #TODO we could have x, x1, x2 where x1, x2 are augmented
         (x, x_aug), y = batch
         x, x_aug, y = [var.to(self.device).float() for var in (x, x_aug, y)]
+        #print('X X_AUG Y SIZE ', x.size(), x_aug.size(), y.size())
         y_hat, latent = self.net.forward(x, return_latents=True)
         _, latent_aug = self.net.forward(x_aug, return_latents=True)
         if self.opts.dataset_type == "cars_encode":
@@ -369,10 +448,10 @@ class Coach:
         x, y = batch
         x, y = x.to(self.device).float(), y.to(self.device).float()
         y_hat, latent = self.net.forward(x, return_latents=True)
-        print('x y_hat latent size ', x.size(), y_hat.size(), latent.size())
+        #print('x y y_hat latent size ', x.size(), y.size(), y_hat.size(), latent.size())
         if self.opts.dataset_type == "cars_encode":
             y_hat = y_hat[:, :, 32:224, :]
-        return x, y, y_hat, latent 
+        return x, y, y_hat[0].unsqueeze(0), latent 
 
 
     def log_metrics(self, metrics_dict, prefix):
@@ -505,8 +584,9 @@ class Coach:
         with torch.no_grad():
             loss_dict = {}
             x, _ = test_batch
-            x = x.to(self.device).float()
-            real_w, fake_w = self.sample_real_and_fake_latents(x)
+            #print('X', type(x), len(x))
+            x[0] = x[0].to(self.device).float()
+            real_w, fake_w = self.sample_real_and_fake_latents(x[0])
             real_pred = self.discriminator(real_w)
             fake_pred = self.discriminator(fake_w)
             loss = self.discriminator_loss(real_pred, fake_pred, loss_dict)

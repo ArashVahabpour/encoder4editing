@@ -52,8 +52,8 @@ class pSp(nn.Module):
             self.encoder.load_state_dict(encoder_ckpt, strict=False)
             print('Loading decoder weights from pretrained!')
             print('weights ', self.opts.stylegan_weights)
-            with tf.Session().as_default() as sess:
-                ckpt = torch.load(self.opts.stylegan_weights)
+           # with tf.Session().as_default() as sess:
+            ckpt = torch.load(self.opts.stylegan_weights)
             print('stylegan weights', self.opts.stylegan_weights)
 
             self.decoder.load_state_dict(ckpt['g_ema'], strict=False)
@@ -62,19 +62,19 @@ class pSp(nn.Module):
 
     def forward(self, x, resize=True, latent_mask=None, input_code=False, randomize_noise=True,
                 inject_latent=None, return_latents=False, alpha=None):
-        print('x size ', x.size())
+        #print('x size ', x.size())
         if input_code:
             codes = x
         else:
             codes = self.encoder(x)
-            print('codes before size: ', codes.size())
+            #print('codes before size: ', codes.size())
             # normalize with respect to the center of an average face
             if self.opts.start_from_latent_avg:
                 if codes.ndim == 2:
                     codes = codes + self.latent_avg.repeat(codes.shape[0], 1, 1)[:, 0, :]
                 else:
                     codes = codes + self.latent_avg.repeat(codes.shape[0], 1, 1)
-            print('codes after size: ', codes.size())
+            #print('codes after size: ', codes.size())
 
         if latent_mask is not None:
             for i in latent_mask:

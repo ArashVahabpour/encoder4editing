@@ -133,8 +133,14 @@ celeba/*
 *.pt
 experiment/*
 ffhq-dataset/*
+encoder4editing/experiment/*
 images1024/*
 lsun/*
 pretrained_models/*
 stylegan2-pytorch/*
-
+encoder4editing/*
+delete.py
+simclr/datasets
+simclr/runs
+core.*
+e4e_church_encode.pt

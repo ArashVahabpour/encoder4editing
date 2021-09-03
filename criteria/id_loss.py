@@ -23,7 +23,7 @@ class IDLoss(nn.Module):
         return x_feats
 
     def forward(self, y_hat, y, x):
-        n_samples = x.shape[0]
+        n_samples = x.shape[0]#//2
         x_feats = self.extract_feats(x)
         y_feats = self.extract_feats(y)  # Otherwise use the feature from there
         y_hat_feats = self.extract_feats(y_hat)
@@ -32,7 +32,8 @@ class IDLoss(nn.Module):
         sim_improvement = 0
         id_logs = []
         count = 0
-        print('x y yhat feats size ', x.size(), y.size(), y_hat.size(), y_feats.size(), y_hat_feats.size())
+        #print('x y yhat yfeats yhatfeats size ', x.size(), y.size(), y_hat.size(), y_feats.size(), y_hat_feats.size())
+        #print(n_samples)
         for i in range(n_samples):
             diff_target = y_hat_feats[i].dot(y_feats[i])
             diff_input = y_hat_feats[i].dot(x_feats[i])
