@@ -101,7 +101,7 @@ class Coach:
                                               #transforms.RandomHorizontalFlip(),
                                               #transforms.RandomApply([color_jitter], p=0.8),
                                               #transforms.RandomGrayscale(p=0.2),
-                                              #GaussianBlur(kernel_size=int(0.1 * size)),
+                                              GaussianBlur(kernel_size=int(0.1 * size)),
                                               transforms.ToTensor(),
                                               transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
         return data_transforms
@@ -165,6 +165,7 @@ class Coach:
                     loss_dict = self.train_discriminator(batch)
 
                 (x, x_aug), y = batch
+                #print('mean x y ', torch.mean(x), torch.mean(y))
                 #print('size x x_aug batch ', x.size(), x_aug.size())
                 #x_all = torch.cat((x, x_aug), dim=0)
                 #x, y, y_hat, latent_all = self.forward_orig((x_all, y))
@@ -182,6 +183,7 @@ class Coach:
                 if self.global_step % self.opts.image_interval == 0 or (
                         self.global_step < 1000 and self.global_step % 25 == 0):
                     self.parse_and_log_images(id_logs, x, y, y_hat, title='images/train/faces')
+                    self.parse_and_log_images(id_logs, x_aug, y, y_hat, title='images/train/faces_aug')
                 if self.global_step % self.opts.board_interval == 0:
                     self.print_metrics(loss_dict, prefix='train')
                     self.log_metrics(loss_dict, prefix='train')
@@ -243,6 +245,9 @@ class Coach:
             self.parse_and_log_images(id_logs, x, y, y_hat,
                                       title='images/test/faces',
                                       subscript='{:04d}'.format(batch_idx))
+            self.parse_and_log_images(id_logs, x_aug, y, y_hat,
+                                      title='images/test/faces_aug',
+                                      subscript='{:04d}'.format(batch_idx))
 
             # For first step just do sanity test on small amount of data
             if self.global_step == 0 and batch_idx >= 4:
@@ -298,7 +303,7 @@ class Coach:
                                       opts=self.opts)
         test_dataset = ImagesDataset(source_root=dataset_args['test_source_root'],
                                      target_root=dataset_args['test_target_root'],
-                                     source_transform=transforms_dict['transform_source'],
+                                     source_transform=source_transform, #transforms_dict['transform_gt_train'], #source_transform, #transforms_dict['transform_source'],
                                      target_transform=transforms_dict['transform_test'],
                                      opts=self.opts)
         print("Number of training samples: {}".format(len(train_dataset)))
@@ -438,7 +443,9 @@ class Coach:
         (x, x_aug), y = batch
         x, x_aug, y = [var.to(self.device).float() for var in (x, x_aug, y)]
         #print('X X_AUG Y SIZE ', x.size(), x_aug.size(), y.size())
+        #y_hat, _, latent = self.net.forward(x, return_latents=True)
         y_hat, latent = self.net.forward(x, return_latents=True)
+        #_, _, latent_aug = self.net.forward(x_aug, return_latents=True)
         _, latent_aug = self.net.forward(x_aug, return_latents=True)
         if self.opts.dataset_type == "cars_encode":
             y_hat = y_hat[:, :, 32:224, :]
@@ -447,6 +454,7 @@ class Coach:
     def forward_orig(self, batch):
         x, y = batch
         x, y = x.to(self.device).float(), y.to(self.device).float()
+        #y_hat, _, latent = self.net.forward(x, return_latents=True)
         y_hat, latent = self.net.forward(x, return_latents=True)
         #print('x y y_hat latent size ', x.size(), y.size(), y_hat.size(), latent.size())
         if self.opts.dataset_type == "cars_encode":
@@ -467,7 +475,8 @@ class Coach:
         im_data = []
         for i in range(display_count):
             cur_im_data = {
-                'input_face': common.log_input_image(x[i], self.opts),
+                'input_face': common.tensor2im(x[i]), #log_input_image(x[i], self.opts),
+                #'augmented_face': common.tensor2im(x_aug[i]), #log_input_image(x[i], self.opts),
                 'target_face': common.tensor2im(y[i]),
                 'output_face': common.tensor2im(y_hat[i]),
             }
@@ -587,6 +596,8 @@ class Coach:
             #print('X', type(x), len(x))
             x[0] = x[0].to(self.device).float()
             real_w, fake_w = self.sample_real_and_fake_latents(x[0])
+            #x = x.to(self.device).float()
+            #real_w, fake_w = self.sample_real_and_fake_latents(x)
             real_pred = self.discriminator(real_w)
             fake_pred = self.discriminator(fake_w)
             loss = self.discriminator_loss(real_pred, fake_pred, loss_dict)

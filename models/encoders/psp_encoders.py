@@ -197,7 +197,8 @@ class Encoder4Editing(Module):
                 features = p1
             delta_i = self.styles[i](features)
             w[:, i] += delta_i
-        return w
+        #return w, w0
+        return w 
 
 
 class BackboneEncoderUsingLastLayerIntoW(Module):

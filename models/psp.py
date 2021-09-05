@@ -52,8 +52,8 @@ class pSp(nn.Module):
             self.encoder.load_state_dict(encoder_ckpt, strict=False)
             print('Loading decoder weights from pretrained!')
             print('weights ', self.opts.stylegan_weights)
-           # with tf.Session().as_default() as sess:
-            ckpt = torch.load(self.opts.stylegan_weights)
+            with tf.Session().as_default() as sess:
+                ckpt = torch.load(self.opts.stylegan_weights)
             print('stylegan weights', self.opts.stylegan_weights)
 
             self.decoder.load_state_dict(ckpt['g_ema'], strict=False)
@@ -66,7 +66,9 @@ class pSp(nn.Module):
         if input_code:
             codes = x
         else:
+            #codes, codes0 = self.encoder(x)
             codes = self.encoder(x)
+            #print('codes.size() ', codes.size())
             #print('codes before size: ', codes.size())
             # normalize with respect to the center of an average face
             if self.opts.start_from_latent_avg:
@@ -96,6 +98,7 @@ class pSp(nn.Module):
             images = self.face_pool(images)
 
         if return_latents:
+            #return images, result_latent, codes0
             return images, result_latent
         else:
             return images
