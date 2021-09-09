@@ -66,8 +66,8 @@ class pSp(nn.Module):
         if input_code:
             codes = x
         else:
-            #codes, codes0 = self.encoder(x)
-            codes = self.encoder(x)
+            codes, codes0 = self.encoder(x)
+            #codes = self.encoder(x)
             #print('codes.size() ', codes.size())
             #print('codes before size: ', codes.size())
             # normalize with respect to the center of an average face
@@ -98,8 +98,8 @@ class pSp(nn.Module):
             images = self.face_pool(images)
 
         if return_latents:
-            #return images, result_latent, codes0
-            return images, result_latent
+            return images, result_latent, codes0
+            #return images, result_latent
         else:
             return images
 

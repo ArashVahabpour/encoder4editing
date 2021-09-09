@@ -1,0 +1,88 @@
+{'batch_size': 9,
+ 'board_interval': 50,
+ 'checkpoint_path': None,
+ 'd_reg_every': 16,
+ 'dataset_type': 'ffhq_encode',
+ 'delta_norm': 2,
+ 'delta_norm_lambda': 0.0002,
+ 'encoder_type': 'Encoder4Editing',
+ 'exp_dir': 'experiment/ffhq_crop_w0_10',
+ 'id_lambda': 0.5,
+ 'image_interval': 100,
+ 'keep_optimizer': False,
+ 'l2_lambda': 1.0,
+ 'learning_rate': 0.0001,
+ 'lpips_lambda': 0.8,
+ 'lpips_type': 'alex',
+ 'max_steps': 40000,
+ 'n_views': 2,
+ 'optim_name': 'ranger',
+ 'progressive_start': 20000,
+ 'progressive_step_every': 2000,
+ 'progressive_steps': [0,
+                       20000,
+                       22000,
+                       24000,
+                       26000,
+                       28000,
+                       30000,
+                       32000,
+                       34000,
+                       36000,
+                       38000,
+                       40000,
+                       42000,
+                       44000],
+ 'r1': 10,
+ 'resume_training_from_ckpt': None,
+ 'save_interval': 20000,
+ 'save_training_data': False,
+ 'simclr_lambda': 10.0,
+ 'simclr_temperature': 0.07,
+ 'start_from_latent_avg': True,
+ 'stylegan_size': 256,
+ 'stylegan_weights': 'pretrained_models/stylegan2-ffhq-config-f.pt',
+ 'sub_exp_dir': None,
+ 'test_batch_size': 9,
+ 'test_workers': 4,
+ 'train_decoder': False,
+ 'update_param_list': None,
+ 'use_w_pool': True,
+ 'val_interval': 10000,
+ 'w_discriminator_lambda': 0.1,
+ 'w_discriminator_lr': 2e-05,
+ 'w_pool_size': 50,
+ 'workers': 8}
+Loading encoders weights from irse50!
+Loading decoder weights from pretrained!
+weights  pretrained_models/stylegan2-ffhq-config-f.pt
+stylegan weights pretrained_models/stylegan2-ffhq-config-f.pt
+Loading ResNet ArcFace
+Loading dataset for ffhq_encode
+dataset  {'transforms': <class 'configs.transforms_config.EncodeTransforms'>, 'train_source_root': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/images1024', 'train_target_root': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/images1024', 'test_source_root': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/celeba', 'test_target_root': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/celeba'}
+dir  /data/shpx/notebooks/opoursaeed/dev/encoder4editing/images1024
+dir  /data/shpx/notebooks/opoursaeed/dev/encoder4editing/images1024
+dir  /data/shpx/notebooks/opoursaeed/dev/encoder4editing/celeba
+dir  /data/shpx/notebooks/opoursaeed/dev/encoder4editing/celeba
+Number of training samples: 61089
+Number of test samples: 30000
+Changed progressive stage to:  ProgressiveStage.WTraining
+Metrics for train, step 0
+	d_real_loss =  0.7012137174606323
+	d_fake_loss =  0.6861597299575806
+	discriminator_loss =  1.387373447418213
+	discriminator_r1_loss =  0.1361595094203949
+	encoder_discriminator_loss =  0.6991804242134094
+	encoder_discriminator_loss_weighted =  0.06991804242134095
+	total_delta_loss =  0.0
+	total_delta_loss_weighted =  0.0
+	loss_id =  1.0385810136795044
+	id_improve =  -1.038580943726831
+	id_improve_weighted =  -0.5192904718634155
+	loss_l2 =  0.2973771393299103
+	loss_l2_weighted =  0.2973771393299103
+	loss_lpips =  0.7068848013877869
+	loss_lpips_weighted =  0.5655078411102296
+	loss_simclr =  2.810633420944214
+	loss_simclr_weighted =  28.10633420944214
+	loss =  29.558427810668945

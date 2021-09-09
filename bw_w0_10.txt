@@ -1,0 +1,99 @@
+WARNING:tensorflow:From /data/shpx/notebooks/opoursaeed/dev/encoder4editing/models/psp.py:55: The name tf.Session is deprecated. Please use tf.compat.v1.Session instead.
+
+2021-09-06 05:43:29.431305: I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
+2021-09-06 05:43:29.441115: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2100000000 Hz
+2021-09-06 05:43:29.443915: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x55d2a779b840 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+2021-09-06 05:43:29.443958: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
+{'batch_size': 18,
+ 'board_interval': 50,
+ 'checkpoint_path': None,
+ 'd_reg_every': 16,
+ 'dataset_type': 'ffhq_encode',
+ 'delta_norm': 2,
+ 'delta_norm_lambda': 0.0002,
+ 'encoder_type': 'Encoder4Editing',
+ 'exp_dir': 'experiment/ffhq_bw_w0_10',
+ 'id_lambda': 0.5,
+ 'image_interval': 100,
+ 'keep_optimizer': False,
+ 'l2_lambda': 1.0,
+ 'learning_rate': 0.0001,
+ 'lpips_lambda': 0.8,
+ 'lpips_type': 'alex',
+ 'max_steps': 100000,
+ 'n_views': 2,
+ 'optim_name': 'ranger',
+ 'progressive_start': 20000,
+ 'progressive_step_every': 2000,
+ 'progressive_steps': [0,
+                       20000,
+                       22000,
+                       24000,
+                       26000,
+                       28000,
+                       30000,
+                       32000,
+                       34000,
+                       36000,
+                       38000,
+                       40000,
+                       42000,
+                       44000],
+ 'r1': 10,
+ 'resume_training_from_ckpt': None,
+ 'save_interval': 20000,
+ 'save_training_data': False,
+ 'simclr_lambda': 10.0,
+ 'simclr_temperature': 0.07,
+ 'start_from_latent_avg': True,
+ 'stylegan_size': 256,
+ 'stylegan_weights': 'pretrained_models/stylegan2-ffhq-config-f.pt',
+ 'sub_exp_dir': None,
+ 'test_batch_size': 18,
+ 'test_workers': 4,
+ 'train_decoder': False,
+ 'update_param_list': None,
+ 'use_w_pool': True,
+ 'val_interval': 10000,
+ 'w_discriminator_lambda': 0.1,
+ 'w_discriminator_lr': 2e-05,
+ 'w_pool_size': 50,
+ 'workers': 8}
+Loading encoders weights from irse50!
+Loading decoder weights from pretrained!
+weights  pretrained_models/stylegan2-ffhq-config-f.pt
+stylegan weights pretrained_models/stylegan2-ffhq-config-f.pt
+Loading ResNet ArcFace
+Loading dataset for ffhq_encode
+dataset  {'transforms': <class 'configs.transforms_config.EncodeTransforms'>, 'train_source_root': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/images1024', 'train_target_root': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/images1024', 'test_source_root': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/celeba', 'test_target_root': '/data/shpx/notebooks/opoursaeed/dev/encoder4editing/celeba'}
+dir  /data/shpx/notebooks/opoursaeed/dev/encoder4editing/images1024
+dir  /data/shpx/notebooks/opoursaeed/dev/encoder4editing/images1024
+dir  /data/shpx/notebooks/opoursaeed/dev/encoder4editing/celeba
+dir  /data/shpx/notebooks/opoursaeed/dev/encoder4editing/celeba
+Number of training samples: 61089
+Number of test samples: 30000
+Changed progressive stage to:  ProgressiveStage.WTraining
+Metrics for train, step 0
+	d_real_loss =  0.7006617784500122
+	d_fake_loss =  0.6861555576324463
+	discriminator_loss =  1.3868173360824585
+	discriminator_r1_loss =  0.13544632494449615
+	encoder_discriminator_loss =  0.6988968253135681
+	encoder_discriminator_loss_weighted =  0.06988968253135681
+	total_delta_loss =  0.0
+	total_delta_loss_weighted =  0.0
+	loss_id =  1.0278334617614746
+	id_improve =  -1.0278334867002235
+	id_improve_weighted =  -0.5139167433501117
+	loss_l2 =  0.2864697575569153
+	loss_l2_weighted =  0.2864697575569153
+	loss_lpips =  0.6932228207588196
+	loss_lpips_weighted =  0.5545782566070557
+	loss_simclr =  3.1871097087860107
+	loss_simclr_weighted =  31.871097087860107
+	loss =  33.29595184326172
+/data/shpx/notebooks/opoursaeed/dev/encoder4editing/training/ranger.py:123: UserWarning: This overload of addcmul_ is deprecated:
+	addcmul_(Number value, Tensor tensor1, Tensor tensor2)
+Consider using one of the following signatures instead:
+	addcmul_(Tensor tensor1, Tensor tensor2, *, Number value) (Triggered internally at  /pytorch/torch/csrc/utils/python_arg_parser.cpp:766.)
+  exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)

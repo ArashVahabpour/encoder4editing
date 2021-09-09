@@ -80,7 +80,7 @@ class TrainOptions:
                                  help="Name of training parameters to update the loaded training checkpoint")
 
         # SimCLR specifics
-        self.parser.add_argument('--simclr_lambda', default=1.0, type=float, help='SimCLR\'s contrastive loss multiplier factor')
+        self.parser.add_argument('--simclr_lambda', default=10.0, type=float, help='SimCLR\'s contrastive loss multiplier factor')
         self.parser.add_argument('--n_views', default=2, type=int,
                                  help='1 + number of augmented images')
         self.parser.add_argument('--simclr_temperature', default=0.07, type=float,

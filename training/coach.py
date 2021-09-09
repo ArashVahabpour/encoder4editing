@@ -170,9 +170,10 @@ class Coach:
                 #x_all = torch.cat((x, x_aug), dim=0)
                 #x, y, y_hat, latent_all = self.forward_orig((x_all, y))
                 #loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent_all)
-                x, x_aug, y, y_hat, latent, latent_aug = self.forward(batch)
+                #x, x_aug, y, y_hat, latent, latent_aug = self.forward(batch)
+                x, x_aug, y, y_hat, latent_0, latent_aug_0, latent, latent_aug = self.forward(batch)
                 #print('size latent latent_aug batch ', latent.size(), latent_aug.size())
-                loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent, latent_aug)
+                loss, encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent_0, latent_aug_0, latent, latent_aug)
 
                 loss_dict = {**loss_dict, **encoder_loss_dict}
                 self.optimizer.zero_grad()
@@ -227,11 +228,11 @@ class Coach:
                 cur_loss_dict = self.validate_discriminator(batch)
             with torch.no_grad():
                 #print('batch ', batch)
-                x, x_aug, y, y_hat, latent, latent_aug = self.forward(batch)
+                x, x_aug, y, y_hat, latent_0, latent_aug_0, latent, latent_aug = self.forward(batch)
                 #print('VAL x x_aug', x.size(), x_aug.size())
                 #x, y, y_hat, latent = self.forward_orig(batch)
                 #loss, cur_encoder_loss_dict, id_logs = self.calc_loss_orig(x, y, y_hat, latent)
-                loss, cur_encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent, latent_aug)
+                loss, cur_encoder_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent_0, latent_aug_0, latent, latent_aug)
                 #(x, x_aug), y = batch
                 #x_all = torch.cat((x, x_aug), dim=0)
                 #x, y, y_hat, latent_all = self.forward_orig((x_all, y))
@@ -311,7 +312,7 @@ class Coach:
         return train_dataset, test_dataset
 
 
-    def calc_loss(self, x, y, y_hat, latent, latent_aug):
+    def calc_loss(self, x, y, y_hat, latent_0, latent_aug_0, latent, latent_aug):
     #def calc_loss(self, x, y, y_hat, latent_all):
         #print('Latent Latent_aug size: ', latent.size(), latent_aug.size())
         #N = latent_all.size(0)
@@ -331,6 +332,7 @@ class Coach:
                 loss_disc += F.softplus(-fake_pred).mean()
             loss_disc /= len(dims_to_discriminate)
             loss_dict['encoder_discriminator_loss'] = float(loss_disc)
+            loss_dict['encoder_discriminator_loss_weighted'] = float(loss_disc) * self.opts.w_discriminator_lambda
             loss += self.opts.w_discriminator_lambda * loss_disc
 
         if self.opts.progressive_steps and self.net.encoder.progressive_stage.value != 18:  # delta regularization loss
@@ -345,6 +347,7 @@ class Coach:
                 loss_dict[f"delta{i}_loss"] = float(delta_loss)
                 total_delta_loss += delta_loss
             loss_dict['total_delta_loss'] = float(total_delta_loss)
+            loss_dict['total_delta_loss_weighted'] = float(total_delta_loss) * self.opts.delta_norm_lambda
             loss += self.opts.delta_norm_lambda * total_delta_loss
 
         if self.opts.id_lambda > 0:  # Similarity loss
@@ -352,25 +355,30 @@ class Coach:
             loss_id, sim_improvement, id_logs = self.id_loss(y_hat, y, x)
             loss_dict['loss_id'] = float(loss_id)
             loss_dict['id_improve'] = float(sim_improvement)
+            loss_dict['id_improve_weighted'] = float(sim_improvement) * self.opts.id_lambda
             loss += loss_id * self.opts.id_lambda
         if self.opts.l2_lambda > 0:
             loss_l2 = F.mse_loss(y_hat, y)
             loss_dict['loss_l2'] = float(loss_l2)
+            loss_dict['loss_l2_weighted'] = float(loss_l2) * self.opts.l2_lambda
             loss += loss_l2 * self.opts.l2_lambda
         if self.opts.lpips_lambda > 0:
             loss_lpips = self.lpips_loss(y_hat, y)
             loss_dict['loss_lpips'] = float(loss_lpips)
+            loss_dict['loss_lpips_weighted'] = float(loss_lpips) * self.opts.lpips_lambda
             loss += loss_lpips * self.opts.lpips_lambda
         if self.opts.simclr_lambda > 0:
             #print('size ', latent.size(), latent_aug.size())
             #latent_simclr = torch.cat((latent.unsqueeze(0), latent_aug.unsqueeze(0)), dim=0)
             #print('latent latent aug size: ', latent.size(), latent_aug.size())
+            #latent_simclr = torch.cat((latent_0.reshape(latent_0.size(0), -1), latent_aug_0.reshape(latent_0.size(0), -1)), dim=0)
             latent_simclr = torch.cat((latent.reshape(latent.size(0), -1), latent_aug.reshape(latent.size(0), -1)), dim=0)
             #print('latent simclr size ', latent_simclr.size())
             logits, labels = self.info_nce_loss(latent_simclr)
             #logits, labels = self.info_nce_loss(latent_all)
             loss_simclr = self.simclr_criterion(logits, labels)
             loss_dict['loss_simclr'] = float(loss_simclr)
+            loss_dict['loss_simclr_weighted'] = float(loss_simclr) * self.opts.simclr_lambda
             loss += loss_simclr * self.opts.simclr_lambda
 
         loss_dict['loss'] = float(loss)
@@ -443,19 +451,20 @@ class Coach:
         (x, x_aug), y = batch
         x, x_aug, y = [var.to(self.device).float() for var in (x, x_aug, y)]
         #print('X X_AUG Y SIZE ', x.size(), x_aug.size(), y.size())
-        #y_hat, _, latent = self.net.forward(x, return_latents=True)
-        y_hat, latent = self.net.forward(x, return_latents=True)
-        #_, _, latent_aug = self.net.forward(x_aug, return_latents=True)
-        _, latent_aug = self.net.forward(x_aug, return_latents=True)
+        y_hat, latent, latent_0 = self.net.forward(x, return_latents=True)
+        #print('latent_all latent size ', latent_all.size(), latent.size())
+        #y_hat, latent = self.net.forward(x, return_latents=True)
+        _, latent_aug, latent_aug_0 = self.net.forward(x_aug, return_latents=True)
+        #_, latent_aug = self.net.forward(x_aug, return_latents=True)
         if self.opts.dataset_type == "cars_encode":
             y_hat = y_hat[:, :, 32:224, :]
-        return x, x_aug, y, y_hat, latent, latent_aug
+        return x, x_aug, y, y_hat, latent_0, latent_aug_0, latent, latent_aug
 
     def forward_orig(self, batch):
         x, y = batch
         x, y = x.to(self.device).float(), y.to(self.device).float()
-        #y_hat, _, latent = self.net.forward(x, return_latents=True)
-        y_hat, latent = self.net.forward(x, return_latents=True)
+        y_hat, _, latent = self.net.forward(x, return_latents=True)
+        #y_hat, latent = self.net.forward(x, return_latents=True)
         #print('x y y_hat latent size ', x.size(), y.size(), y_hat.size(), latent.size())
         if self.opts.dataset_type == "cars_encode":
             y_hat = y_hat[:, :, 32:224, :]
@@ -560,6 +569,7 @@ class Coach:
         self.requires_grad(self.discriminator, True)
 
         with torch.no_grad():
+            #print('x size ', x.size())
             real_w, fake_w = self.sample_real_and_fake_latents(x)
         real_pred = self.discriminator(real_w)
         fake_pred = self.discriminator(fake_w)
@@ -607,7 +617,7 @@ class Coach:
     def sample_real_and_fake_latents(self, x):
         sample_z = torch.randn(self.opts.batch_size, 512, device=self.device)
         real_w = self.net.decoder.get_latent(sample_z)
-        fake_w = self.net.encoder(x)
+        fake_w, _ = self.net.encoder(x)
         if self.is_progressive_training():  # When progressive training, feed only unique w's
             dims_to_discriminate = self.get_dims_to_discriminate()
             fake_w = fake_w[:, dims_to_discriminate, :]
